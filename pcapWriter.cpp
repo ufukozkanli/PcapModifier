@@ -39,10 +39,21 @@ int extract_sFlow_fs_hs_Ethernet(u_char *fs_HS_Packet) {
   } else if (sFS_RP_HS_Type == 0x86dd) {
     int *ipS = (int *) (layer3 + 8);
     *ipS = 0;
+    int *ipS1 = (int *) (layer3 + 12);
+    *ipS1 = 0;
+    int *ipS2 = (int *) (layer3 + 16);
+    *ipS2 = 0;
+    int *ipS3 = (int *) (layer3 + 20);
+    *ipS3 = 0;
+
     int *ipH = (int *) (layer3 + 24);
     *ipH = 0;
-    //layer4_proto=*(layer3+6);
-    //layer4=layer3+40;
+    int *ipH1 = (int *) (layer3 + 28);
+    *ipH1 = 0;
+    int *ipH2 = (int *) (layer3 + 32);
+    *ipH2 = 0;
+    int *ipH3 = (int *) (layer3 + 36);
+    *ipH3 = 0;
 
   } else {
     printf("Sflow Sample Packet not expected format (IPv4 or IPv6)...\n");
@@ -86,7 +97,7 @@ int extract_sf_flowSample(u_char *fsPacket) {
         return -1;
       }
     } else {
-      printf("\nNot implemented..FS->RP->Format expected:Raw Packet Header\n");
+      fprintf(pFile,"\nNot implemented..FS->RP->Format expected:Raw Packet Header\n");
     }
 
     fsRawPacket = fsRawPacket + sFS_FR_FlowDataLength + 8;
@@ -184,7 +195,7 @@ int extract_ethernet(u_char *pHead) {
     *ipH = 0;
     layer4_proto = *(layer3 + 6);
     layer4 = layer3 + 40;
-
+    //TODO IPV6 128 bit
   } else {
     fprintf(pFile, "Packet not expected format (IPv4 or IPv6)...");
     return -10;
@@ -198,8 +209,15 @@ int extract_ethernet(u_char *pHead) {
 }
 
 int main(int argc, char *argv[]) {
-  const char *write_filename = PCAP_WRITEFILE;
-  const char *read_filename = PCAP_READFILE;
+  char *write_filename; //= PCAP_WRITEFILE;
+  char *read_filename; //= PCAP_READFILE;
+  if (argc != 3) {
+    printf("argument count is:%d, expected:2\n", argc);
+    exit(1);
+  }
+  read_filename=argv[1];
+  write_filename=argv[2];
+
   std::cout << "Reading File::" << read_filename << std::endl;
   std::cout << "Writing File::" << write_filename << std::endl;
 
@@ -212,7 +230,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  pcap_dumper_t *handlerDumper = pcap_dump_open(handlerReading, PCAP_WRITEFILE);
+  pcap_dumper_t *handlerDumper = pcap_dump_open(handlerReading, write_filename);
 
   //printf("%s",pcap_geterr(handlerDumper));
 
