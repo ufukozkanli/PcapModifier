@@ -14,7 +14,6 @@
 
 
 FILE *pFile = fopen("outputInfo.txt", "w");
-int testii=0;
 
 void hexDump(const char *desc, const void *addr, int len);
 
