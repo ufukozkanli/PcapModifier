@@ -11,7 +11,7 @@
 
 #define SFLOWFILEPRINTTYPE 3
 FILE *fp = stdout;//fopen ( "pcapTestResult.txt", "w" ) ;
-FILE *fp_e = fopen ( "pcapTestResultEvents.txt", "w" ) ;
+FILE *fp_e; //= fopen ( "pcapTestResultEvents.txt", "w" ) ;
 #define debug_print(type, ...)\
   do { if (type==0 && SFLOWFILEPRINTTYPE<=type) fprintf(stdout, __VA_ARGS__); else if(type==1 && type>=SFLOWFILEPRINTTYPE) fprintf(stdout, __VA_ARGS__);else if(type==2 && type>=SFLOWFILEPRINTTYPE) fprintf(fp,__VA_ARGS__);else if(type==3 && type>=SFLOWFILEPRINTTYPE) fprintf(fp_e,__VA_ARGS__);else if(type>=SFLOWFILEPRINTTYPE) fprintf(stdout,__VA_ARGS__);  } while (0)
 
@@ -422,14 +422,19 @@ void hexDump(const char *desc, const void *addr, int len) {
 int main(int argc, char *argv[]) {
 
 
-  if (argc != 2) {
-    printf("File input expected%d", argc);
+  if (argc != 3) {
+    printf("File input and output expected%d", argc);
     exit(1);
   }
 
   //get file
   char *filename = argv[1];
   std::cout << "Processing File::" << filename << std::endl;
+  char *output_filename = argv[2];
+  std::cout << "Output File::" << output_filename << std::endl;
+
+  fp_e = fopen ( output_filename, "w" ) ;
+
   //error buffer
   char errbuff[PCAP_ERRBUF_SIZE];
 
