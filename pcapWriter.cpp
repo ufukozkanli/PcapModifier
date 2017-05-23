@@ -28,31 +28,46 @@ int extract_sFlow_fs_hs_Ethernet(u_char *fs_HS_Packet) {
 
   if (sFS_RP_HS_Type == 0x0800) {
     //SET IP ADDRESS TO 0
-    int *ipS = (int *) (layer3 + 12);
+//    char *ipS = (char *) (layer3 + 12);
+//    *ipS = 0;
+//    char *ipH = (char *) (layer3 + 16);
+//    *ipH = 0;
+
+    auto ipS = (u_int8_t  *) (layer3 + 15);
     *ipS = 0;
-    int *ipH = (int *) (layer3 + 16);
+
+    auto ipH = (u_int8_t  *) (layer3 + 19);
     *ipH = 0;
+
     //size_t header_size=(*layer3 & 0x0f)*4;
     //layer4_proto=*(layer3+9);
     //layer4=layer3+header_size;
   } else if (sFS_RP_HS_Type == 0x86dd) {
-    int *ipS = (int *) (layer3 + 8);
-    *ipS = 0;
-    int *ipS1 = (int *) (layer3 + 12);
-    *ipS1 = 0;
-    int *ipS2 = (int *) (layer3 + 16);
-    *ipS2 = 0;
-    int *ipS3 = (int *) (layer3 + 20);
-    *ipS3 = 0;
+//    int *ipS = (int *) (layer3 + 8);
+//    *ipS = 0;
+//    int *ipS1 = (int *) (layer3 + 12);
+//    *ipS1 = 0;
+//    int *ipS2 = (int *) (layer3 + 16);
+//    *ipS2 = 0;
+//    int *ipS3 = (int *) (layer3 + 20);
+//    *ipS3 = 0;
+//
+//    int *ipH = (int *) (layer3 + 24);
+//    *ipH = 0;
+//    int *ipH1 = (int *) (layer3 + 28);
+//    *ipH1 = 0;
+//    int *ipH2 = (int *) (layer3 + 32);
+//    *ipH2 = 0;
+//    int *ipH3 = (int *) (layer3 + 36);
+//    *ipH3 = 0;
 
-    int *ipH = (int *) (layer3 + 24);
+    auto ipS = (u_int8_t  *) (layer3 + 23);
+    *ipS = 0;
+
+    auto ipH = (u_int8_t  *) (layer3 + 39);
     *ipH = 0;
-    int *ipH1 = (int *) (layer3 + 28);
-    *ipH1 = 0;
-    int *ipH2 = (int *) (layer3 + 32);
-    *ipH2 = 0;
-    int *ipH3 = (int *) (layer3 + 36);
-    *ipH3 = 0;
+
+
 
   } else {
     printf("Sflow Sample Packet not expected format (IPv4 or IPv6)...\n");
@@ -178,10 +193,18 @@ int extract_ethernet(u_char *pHead) {
 //IPv4
   if (layer2_type == 0x0800) {
     //SET IP ADDRESS OF MAIN PACKET(NOT SFLOW SAMPLES) TO 0
-    int *ipS = (int *) (layer3 + 12);
+//    int *ipS = (int *) (layer3 + 12);
+//    *ipS = 0;
+
+//    int *ipH = (int *) (layer3 + 16);
+//    *ipH = 0;
+
+    auto ipS = (u_int8_t  *) (layer3 + 15);
     *ipS = 0;
-    int *ipH = (int *) (layer3 + 16);
+
+    auto ipH = (u_int8_t  *) (layer3 + 19);
     *ipH = 0;
+
     size_t header_size = (*layer3 & 0x0f) * 4;
     layer4_proto = *(layer3 + 9);
     layer4 = layer3 + header_size;
