@@ -13,7 +13,7 @@
 #include <iostream>     // std::cout
 #include <sstream>      // std::ostringstream
 #include <iomanip>
-
+#include <bitset>
 #define SFLOWFILEPRINTTYPE 3
 FILE *fp = stdout;//fopen ( "pcapTestResult.txt", "w" ) ;
 FILE *fp_e; //= fopen ( "pcapTestResultEvents.txt", "w" ) ;
@@ -323,7 +323,7 @@ int read_sflow_datagram(const u_char *s_packet) {
 }
 
 
-std::string print_ip(int ip) {
+std::string print_ip(uint32_t ip) {
   struct in_addr ipS;
   ipS.s_addr = ip;
 
@@ -339,6 +339,16 @@ std::string print_ip(int ip) {
   return stringStream.str();
   //printf("%d.%d.%d.%d\n", bytes[3], bytes[2], bytes[1], bytes[0]);
 }
+std::string print_ipBinary(uint32_t ip) {
+
+
+  std::string s = std::bitset< 32 >( __bswap_32(ip) ).to_string();
+  s.insert(8,".");
+  s.insert(17,".");
+  s.insert(26,".");
+  return s;
+}
+
 
 std::map<std::string, std::map<std::string, u_int64_t>> my_map;
 
@@ -350,11 +360,13 @@ int mapEvents(std::vector<temp_stat> &list) {
     if (it.ip_v == 4) {
       struct in_addr ipS;
       ipS.s_addr = it.ip_address_s;
-      stringStream << "IP=" << print_ip(it.ip_address_s);
+      //stringStream << "IP=" << print_ip(it.ip_address_s);
+      stringStream << "IP=" <<print_ipBinary(it.ip_address_s);
+      //stringStream << "IP=" << print_ip(it.ip_address_s)<<"-"<<print_ipBinary(it.ip_address_s);
       //stringStream << "IP=" << inet_ntoa(ipS);
     } else
-      stringStream << "IP=" << std::hex << it.ip_addressv6_1 << ":" << it.ip_addressv6_2 << ":" << it.ip_addressv6_3
-                   << ":" << it.ip_addressv6_4;
+      stringStream << "IP=" << std::hex << __bswap_32(it.ip_addressv6_1) << ":" << __bswap_32(it.ip_addressv6_2) << ":" << __bswap_32(it.ip_addressv6_3)
+                   << ":" << __bswap_32(it.ip_addressv6_4);
 
 
     std::string copyOfStr = stringStream.str();
@@ -374,7 +386,7 @@ int mapEvents(std::vector<temp_stat> &list) {
 
   for (auto s:my_map) {
 //DUPLICATE CHECKS
-    if (s.second.size() > 1)
+    //if (s.second.size() > 1)
       for (auto p:s.second) {
 
 
@@ -390,8 +402,6 @@ int mapEvents(std::vector<temp_stat> &list) {
 
 int printEvents(std::vector<temp_stat> &list) {
 
-  mapEvents(list);
-  return 0;
   for (auto it:list) {
 
     struct in_addr ipS;
@@ -524,6 +534,7 @@ int main(int argc, char *argv[]) {
 
   }
   //fclose (fp);
-  printEvents(events);
+  mapEvents(events);
+  //printEvents(events);
   return (0);
 }
