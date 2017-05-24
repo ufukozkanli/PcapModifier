@@ -8,6 +8,11 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <cstring>
+#include <iostream>
+#include <map>
+#include <iostream>     // std::cout
+#include <sstream>      // std::ostringstream
+#include <iomanip>
 
 #define SFLOWFILEPRINTTYPE 3
 FILE *fp = stdout;//fopen ( "pcapTestResult.txt", "w" ) ;
@@ -328,19 +333,76 @@ int read_sflow_datagram(const u_char *s_packet) {
   return 0;
 }
 
+std::map<std::string,u_int64_t> my_map;
+
+std::string print_ip(int ip)
+{
+  struct in_addr ipS;
+  ipS.s_addr =ip;
+
+
+  std::ostringstream stringStream;
+  unsigned char bytes[4];
+  bytes[0] = ip & 0xFF;
+  bytes[1] = (ip >> 8) & 0xFF;
+  bytes[2] = (ip >> 16) & 0xFF;
+  bytes[3] = (ip >> 24) & 0xFF;
+  stringStream <<std::setfill('0')<<std::setw(3)<< +bytes[0]<<"."<<std::setfill('0')<<std::setw(3)<<+bytes[1]<<"."<<std::setfill('0')<<std::setw(3)<<+bytes[2]<<"."<<+bytes[3];
+  return stringStream.str();
+  //printf("%d.%d.%d.%d\n", bytes[3], bytes[2], bytes[1], bytes[0]);
+}
+
+int mapEvents(std::vector<temp_stat> &list)
+{
+
+  for (auto it:list) {
+
+    std::ostringstream stringStream;
+    if(it.ip_v==4) {
+      struct in_addr ipS;
+      ipS.s_addr = it.ip_address_s;
+      stringStream <<"IP=" <<print_ip(it.ip_address_s);
+      //stringStream << "IP=" << inet_ntoa(ipS);
+    }
+    else
+      stringStream << "IP=" << std::hex <<it.ip_addressv6_1<<":"<<it.ip_addressv6_2<<":"<<it.ip_addressv6_3<<":"<<it.ip_addressv6_4;
+    stringStream<< "-P=" << it.interface_i;
+
+    std::string copyOfStr = stringStream.str();
+    //std::cout << copyOfStr;
+
+    auto search = my_map.find(copyOfStr);
+    if (search != my_map.end()) {
+      search->second++;
+    } else {
+      my_map[copyOfStr] = 1;
+    }
+  }
+
+  for (auto s:my_map) {
+
+
+    debug_print(3, "%s\t"
+            "%d\n"
+         , s.first.c_str()
+         ,s.second
+    );
+
+
+  }
+}
 int printEvents(std::vector<temp_stat> &list) {
-  debug_print(3, "#PAC\t"
-          "MACs\t"
-          "Interace_I\t"
-          "IpV4\t"
-          "Ipv6\t"
-          "\n");
+
+  mapEvents(list);
+return 0;
   for (auto it:list) {
 
     struct in_addr ipS;
-    ipS.s_addr = (it.ip_address_s & 0xFFF0);
+    ipS.s_addr = it.ip_address_s;
 
-    debug_print(3, "%d\t"
+
+
+    debug_print(4, "%d\t"
             "0x%02x"
             "%02x\t"
             "%d\t"
