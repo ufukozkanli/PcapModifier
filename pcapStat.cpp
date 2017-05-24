@@ -21,8 +21,6 @@ FILE *fp_e; //= fopen ( "pcapTestResultEvents.txt", "w" ) ;
   do { if (type==0 && SFLOWFILEPRINTTYPE<=type) fprintf(stdout, __VA_ARGS__); else if(type==1 && type>=SFLOWFILEPRINTTYPE) fprintf(stdout, __VA_ARGS__);else if(type==2 && type>=SFLOWFILEPRINTTYPE) fprintf(fp,__VA_ARGS__);else if(type==3 && type>=SFLOWFILEPRINTTYPE) fprintf(fp_e,__VA_ARGS__);else if(type>=SFLOWFILEPRINTTYPE) fprintf(stdout,__VA_ARGS__);  } while (0)
 
 
-
-
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
@@ -34,12 +32,12 @@ FILE *fp_e; //= fopen ( "pcapTestResultEvents.txt", "w" ) ;
 
 /// @relates ec
 template <class... Ts>
-std::string make_error(void* x, Ts&&... xs) {
+std::string make_error(void *x, Ts &&... xs) {
   return "";
 }
-namespace ec
-{
-const char * format_error="";
+
+namespace ec {
+const char *format_error = "";
 }
 
 
@@ -61,22 +59,17 @@ temp_stat current_event = {};
 uint32_t current_packet_number;
 
 
-
-
 void hexDump(const char *desc, const void *addr, int len);
 
 
-
-
-
-int read_header(const u_char *rp_header_packet,uint32_t pack_length) {
+int read_header(const u_char *rp_header_packet, uint32_t pack_length) {
   //TODO Create Single Function both sflow samples and pcap samples (SIMILAR FUNCTION IN PCAP HEADER READER)
 
   debug_print(1, KMAG
           "\n\t\t\t\t###Ethernet Record");
 
-  current_event.mac_s= __bswap_32(*reinterpret_cast<uint32_t const *>(rp_header_packet + 6));
-  current_event.mac_s2= __bswap_16(*reinterpret_cast<uint16_t const *>(rp_header_packet + 10));
+  current_event.mac_s = __bswap_32(*reinterpret_cast<uint32_t const *>(rp_header_packet + 6));
+  current_event.mac_s2 = __bswap_16(*reinterpret_cast<uint16_t const *>(rp_header_packet + 10));
   //__bswap_32(*reinterpret_cast<uint32_t const *>(rp_header_packet + 6));
   //current_event.mac_s&=0xFFFFFF00;
 
@@ -90,7 +83,7 @@ int read_header(const u_char *rp_header_packet,uint32_t pack_length) {
   //Check IPv4 or IPv6
   switch (layer2_type) {
     default: {
-      debug_print(2,"Format:0x%02x Expected format (IPv4(0x800) or IPv6(0x86dd))\n",layer2_type);
+      debug_print(2, "Format:0x%02x Expected format (IPv4(0x800) or IPv6(0x86dd))\n", layer2_type);
       return -10;
     }
     case 0x0800: {
@@ -108,8 +101,8 @@ int read_header(const u_char *rp_header_packet,uint32_t pack_length) {
               "\t\t\t\t\tips:\t%s\n"
               "\t\t\t\t\tipD:\t%s\n", inet_ntoa(ipS), inet_ntoa(ipD)
       );
-      current_event.ip_v=4;
-      current_event.ip_address_s= orig_h;
+      current_event.ip_v = 4;
+      current_event.ip_address_s = orig_h;
       //current_event.ip_address_d = resp_h;
     }
       break;
@@ -120,11 +113,11 @@ int read_header(const u_char *rp_header_packet,uint32_t pack_length) {
       //TODO 128 IPv6
       auto orig_h = *reinterpret_cast<uint32_t const *>(layer3 + 8);
       auto resp_h = *reinterpret_cast<uint32_t const *>(layer3 + 24);
-      current_event.ip_v=6;
-      current_event.ip_addressv6_1= orig_h;
-      current_event.ip_addressv6_2= *reinterpret_cast<uint32_t const *>(layer3 + 12);
-      current_event.ip_addressv6_3= *reinterpret_cast<uint32_t const *>(layer3 + 16);
-      current_event.ip_addressv6_4= *reinterpret_cast<uint32_t const *>(layer3 + 20);
+      current_event.ip_v = 6;
+      current_event.ip_addressv6_1 = orig_h;
+      current_event.ip_addressv6_2 = *reinterpret_cast<uint32_t const *>(layer3 + 12);
+      current_event.ip_addressv6_3 = *reinterpret_cast<uint32_t const *>(layer3 + 16);
+      current_event.ip_addressv6_4 = *reinterpret_cast<uint32_t const *>(layer3 + 20);
       //current_event.ip_address_d = resp_h;
     }
       break;
@@ -160,13 +153,9 @@ int read_header(const u_char *rp_header_packet,uint32_t pack_length) {
           //"PortP:%d\n"
           "IdAddressS:%s\n"
           "IdAddressP:%s\n"
-          "\n"
-  , current_event.packet_number
-  , 0
-  , current_event.mac_s
- // , current_event.port_d
-  , inet_ntoa(ipS)
-  ,inet_ntoa(ipD)
+          "\n", current_event.packet_number, 0, current_event.mac_s
+  // , current_event.port_d
+  , inet_ntoa(ipS), inet_ntoa(ipD)
   );
 
 
@@ -202,9 +191,9 @@ int read_header(const u_char *rp_header_packet,uint32_t pack_length) {
 
 int read_sflow_flowsample(const u_char *fs_packet) {
   current_event = {};
-  current_event.packet_number=current_packet_number;
+  current_event.packet_number = current_packet_number;
   auto interface_i = __bswap_32(*reinterpret_cast<uint32_t const *>(fs_packet + 20));
-  current_event.interface_i=interface_i;
+  current_event.interface_i = interface_i;
   //Number Of Flow Records
   auto fs_flow_record = __bswap_32(*reinterpret_cast<uint32_t const *>(fs_packet + 28));
   debug_print(1, "\n"
@@ -259,7 +248,7 @@ int read_sflow_flowsample(const u_char *fs_packet) {
       if (fs_raw_header_protocol == 1) {
         //###Ethernet Frame Data:
         //TODO HeaderSize checking
-        read_header(fs_flow_data + 16,fs_raw_header_size);
+        read_header(fs_flow_data + 16, fs_raw_header_size);
       } else {
         debug_print(1, "Not implemented..FS->FR->HeaderProtocol\n");
       }
@@ -299,7 +288,7 @@ int read_sflow_datagram(const u_char *s_packet) {
   //TOTAL Number of SFLOW Samples
   auto num_samples = __bswap_32(*reinterpret_cast<uint32_t const *>(s_packet + ip_length + 20));
 
-  debug_print(2, "SampleCount:%d\n",num_samples);
+  debug_print(2, "SampleCount:%d\n", num_samples);
 
   //FOR EACH SFLOW Samples
   //points to first sample packet
@@ -333,12 +322,10 @@ int read_sflow_datagram(const u_char *s_packet) {
   return 0;
 }
 
-std::map<std::string,u_int64_t> my_map;
 
-std::string print_ip(int ip)
-{
+std::string print_ip(int ip) {
   struct in_addr ipS;
-  ipS.s_addr =ip;
+  ipS.s_addr = ip;
 
 
   std::ostringstream stringStream;
@@ -347,59 +334,68 @@ std::string print_ip(int ip)
   bytes[1] = (ip >> 8) & 0xFF;
   bytes[2] = (ip >> 16) & 0xFF;
   bytes[3] = (ip >> 24) & 0xFF;
-  stringStream <<std::setfill('0')<<std::setw(3)<< +bytes[0]<<"."<<std::setfill('0')<<std::setw(3)<<+bytes[1]<<"."<<std::setfill('0')<<std::setw(3)<<+bytes[2]<<"."<<+bytes[3];
+  stringStream << std::setfill('0') << std::setw(3) << +bytes[0] << "." << std::setfill('0') << std::setw(3)
+               << +bytes[1] << "." << std::setfill('0') << std::setw(3) << +bytes[2] << "." << +bytes[3];
   return stringStream.str();
   //printf("%d.%d.%d.%d\n", bytes[3], bytes[2], bytes[1], bytes[0]);
 }
 
-int mapEvents(std::vector<temp_stat> &list)
-{
+std::map<std::string, std::map<std::string, u_int64_t>> my_map;
+
+int mapEvents(std::vector<temp_stat> &list) {
 
   for (auto it:list) {
 
     std::ostringstream stringStream;
-    if(it.ip_v==4) {
+    if (it.ip_v == 4) {
       struct in_addr ipS;
       ipS.s_addr = it.ip_address_s;
-      stringStream <<"IP=" <<print_ip(it.ip_address_s);
+      stringStream << "IP=" << print_ip(it.ip_address_s);
       //stringStream << "IP=" << inet_ntoa(ipS);
-    }
-    else
-      stringStream << "IP=" << std::hex <<it.ip_addressv6_1<<":"<<it.ip_addressv6_2<<":"<<it.ip_addressv6_3<<":"<<it.ip_addressv6_4;
-    stringStream<< "-P=" << it.interface_i;
+    } else
+      stringStream << "IP=" << std::hex << it.ip_addressv6_1 << ":" << it.ip_addressv6_2 << ":" << it.ip_addressv6_3
+                   << ":" << it.ip_addressv6_4;
+
 
     std::string copyOfStr = stringStream.str();
-    //std::cout << copyOfStr;
+
+    std::ostringstream stringStream2;
+    stringStream2 << "P=" << it.interface_i;
+    std::string copyOfStr2 = stringStream2.str();
 
     auto search = my_map.find(copyOfStr);
     if (search != my_map.end()) {
-      search->second++;
+      search->second[copyOfStr2]++;
     } else {
-      my_map[copyOfStr] = 1;
+
+      my_map[copyOfStr][copyOfStr2] = 1;
     }
   }
 
   for (auto s:my_map) {
+//DUPLICATE CHECKS
+    if (s.second.size() > 1)
+      for (auto p:s.second) {
 
 
-    debug_print(3, "%s\t"
-            "%d\n"
-         , s.first.c_str()
-         ,s.second
-    );
+        debug_print(3, "%s\t"
+                "%s\t"
+                "%lu\n", s.first.c_str(), p.first.c_str(), p.second
+        );
+      }
 
 
   }
 }
+
 int printEvents(std::vector<temp_stat> &list) {
 
   mapEvents(list);
-return 0;
+  return 0;
   for (auto it:list) {
 
     struct in_addr ipS;
     ipS.s_addr = it.ip_address_s;
-
 
 
     debug_print(4, "%d\t"
@@ -412,17 +408,8 @@ return 0;
             "%02x-"
             "%02x-"
             "%02x"
-            "\n"
-    , it.packet_number
-    , it.mac_s
-      ,it.mac_s2
-     , it.interface_i
-    ,it.ip_v
-    , inet_ntoa(ipS)
-    ,it.ip_addressv6_1
-    ,it.ip_addressv6_2
-    ,it.ip_addressv6_3
-    ,it.ip_addressv6_4
+            "\n", it.packet_number, it.mac_s, it.mac_s2, it.interface_i, it.ip_v, inet_ntoa(ipS), it.ip_addressv6_1,
+                it.ip_addressv6_2, it.ip_addressv6_3, it.ip_addressv6_4
     );
 
   }
@@ -495,7 +482,7 @@ int main(int argc, char *argv[]) {
   char *output_filename = argv[2];
   std::cout << "Output File::" << output_filename << std::endl;
 
-  fp_e = fopen ( output_filename, "w" ) ;
+  fp_e = fopen(output_filename, "w");
 
   //error buffer
   char errbuff[PCAP_ERRBUF_SIZE];
@@ -518,7 +505,8 @@ int main(int argc, char *argv[]) {
 
   while (pcap_next_ex(handler, &header, &packet) >= 0 && ++current_packet_number) {
     //READ PCAP PACKETS
-    debug_print(2,KMAG "#PAC:%d\n", current_packet_number);
+    debug_print(2, KMAG
+            "#PAC:%d\n", current_packet_number);
     printf(KWHT "");
     //http://www.sflow.org/developers/diagrams/sFlowV5Sample.pdf
     //SKIP LAYERS(ETH,IP,UDP) TILL UDP SFLOW PACKET
