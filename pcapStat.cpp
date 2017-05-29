@@ -48,10 +48,20 @@ struct temp_stat {
   uint32_t ip_addressv6_2;
   uint32_t ip_addressv6_3;
   uint32_t ip_addressv6_4;
+
+  uint32_t ip_address_d;
+  uint32_t ip_addressd_v6_1;
+  uint32_t ip_addressd_v6_2;
+  uint32_t ip_addressd_v6_3;
+  uint32_t ip_addressd_v6_4;
+
   uint32_t ip_v;
   uint32_t mac_s;
   uint32_t mac_s2;
+  uint32_t mac_d;
+  uint32_t mac_d2;
   uint32_t interface_i;
+  uint32_t interface_o;
   uint32_t packet_number;
 };
 std::vector<temp_stat> events;
@@ -67,6 +77,9 @@ int read_header(const u_char *rp_header_packet, uint32_t pack_length) {
 
   debug_print(1, KMAG
           "\n\t\t\t\t###Ethernet Record");
+
+  current_event.mac_d = __bswap_32(*reinterpret_cast<uint32_t const *>(rp_header_packet));
+  current_event.mac_d2 = __bswap_16(*reinterpret_cast<uint16_t const *>(rp_header_packet + 4));
 
   current_event.mac_s = __bswap_32(*reinterpret_cast<uint32_t const *>(rp_header_packet + 6));
   current_event.mac_s2 = __bswap_16(*reinterpret_cast<uint16_t const *>(rp_header_packet + 10));
@@ -103,6 +116,7 @@ int read_header(const u_char *rp_header_packet, uint32_t pack_length) {
       );
       current_event.ip_v = 4;
       current_event.ip_address_s = orig_h;
+      current_event.ip_address_d = resp_h;
       //current_event.ip_address_d = resp_h;
     }
       break;
@@ -118,6 +132,11 @@ int read_header(const u_char *rp_header_packet, uint32_t pack_length) {
       current_event.ip_addressv6_2 = *reinterpret_cast<uint32_t const *>(layer3 + 12);
       current_event.ip_addressv6_3 = *reinterpret_cast<uint32_t const *>(layer3 + 16);
       current_event.ip_addressv6_4 = *reinterpret_cast<uint32_t const *>(layer3 + 20);
+
+      current_event.ip_addressd_v6_1 = resp_h;
+      current_event.ip_addressd_v6_2 = *reinterpret_cast<uint32_t const *>(layer3 + 28);
+      current_event.ip_addressd_v6_3 = *reinterpret_cast<uint32_t const *>(layer3 + 32);
+      current_event.ip_addressd_v6_4 = *reinterpret_cast<uint32_t const *>(layer3 + 36);
       //current_event.ip_address_d = resp_h;
     }
       break;
@@ -194,6 +213,9 @@ int read_sflow_flowsample(const u_char *fs_packet) {
   current_event.packet_number = current_packet_number;
   auto interface_i = __bswap_32(*reinterpret_cast<uint32_t const *>(fs_packet + 20));
   current_event.interface_i = interface_i;
+
+  auto interface_o = __bswap_32(*reinterpret_cast<uint32_t const *>(fs_packet + 24));
+  current_event.interface_o = interface_o;
   //Number Of Flow Records
   auto fs_flow_record = __bswap_32(*reinterpret_cast<uint32_t const *>(fs_packet + 28));
   debug_print(1, "\n"
@@ -342,7 +364,7 @@ std::string print_ip(uint32_t ip) {
 std::string print_ipBinary(uint32_t ip) {
 
 
-  std::string s = std::bitset< 32 >( __bswap_32(ip) ).to_string();
+  std::string s = std::bitset< 32 >( __bswap_32(ip)&0b11111111111111111111111000000000).to_string();
   s.insert(8,".");
   s.insert(17,".");
   s.insert(26,".");
@@ -351,6 +373,7 @@ std::string print_ipBinary(uint32_t ip) {
 
 
 std::map<std::string, std::map<std::string, u_int64_t>> my_map;
+//std::map<std::string,  u_int64_t> my_map;
 
 int mapEvents(std::vector<temp_stat> &list) {
 
@@ -358,28 +381,38 @@ int mapEvents(std::vector<temp_stat> &list) {
 
     std::ostringstream stringStream;
     if (it.ip_v == 4) {
-      struct in_addr ipS;
-      ipS.s_addr = it.ip_address_s;
-      //stringStream << "IP=" << print_ip(it.ip_address_s);
-      stringStream << "IP=" <<print_ipBinary(it.ip_address_s);
+      //struct in_addr ipS,ipD;
+      //ipS.s_addr = it.ip_address_s;
+      //ipD.s_addr = it.ip_address_d;
+
+      stringStream << "IPS=" << print_ip(it.ip_address_s);
+      stringStream << "-IPD=" << print_ip(it.ip_address_d);
+      //stringStream << "IP=" <<print_ipBinary(it.ip_address_s);
       //stringStream << "IP=" << print_ip(it.ip_address_s)<<"-"<<print_ipBinary(it.ip_address_s);
       //stringStream << "IP=" << inet_ntoa(ipS);
-    } else
-      stringStream << "IP=" << std::hex << __bswap_32(it.ip_addressv6_1) << ":" << __bswap_32(it.ip_addressv6_2) << ":" << __bswap_32(it.ip_addressv6_3)
+    } else {
+      stringStream << "IPS=" << std::hex << __bswap_32(it.ip_addressv6_1) << ":" << __bswap_32(it.ip_addressv6_2)
+                   << ":" << __bswap_32(it.ip_addressv6_3)
                    << ":" << __bswap_32(it.ip_addressv6_4);
-
+      stringStream << "-IPD=" << std::hex << __bswap_32(it.ip_addressd_v6_1) << ":" << __bswap_32(it.ip_addressd_v6_2)
+                   << ":" << __bswap_32(it.ip_addressd_v6_3)
+                   << ":" << __bswap_32(it.ip_addressd_v6_4);
+    }
+    stringStream << "-MACS=" <<std::hex<<it.mac_s<<it.mac_s2;
+    stringStream << "-MACD=" <<std::hex<<it.mac_d<<it.mac_d2;
+    stringStream << "-PI=" <<std::dec<<it.interface_i;
+    stringStream << "-PO=" <<std::dec<<it.interface_o;
 
     std::string copyOfStr = stringStream.str();
 
     std::ostringstream stringStream2;
-    stringStream2 << "P=" << it.interface_i;
+    stringStream2 << "-C";
     std::string copyOfStr2 = stringStream2.str();
 
     auto search = my_map.find(copyOfStr);
     if (search != my_map.end()) {
       search->second[copyOfStr2]++;
     } else {
-
       my_map[copyOfStr][copyOfStr2] = 1;
     }
   }

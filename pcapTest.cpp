@@ -8,7 +8,7 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 
-#define SFLOWFILEPRINTTYPE 3
+#define SFLOWFILEPRINTTYPE 0
 FILE *fp = stdout;//fopen ( "pcapTestResult.txt", "w" ) ;
 FILE *fp_e = stdout;//fopen ( "pcapTestResultEvents.txt", "w" ) ;
 #define debug_print(type, ...)\
@@ -127,8 +127,27 @@ int read_header(const u_char *rp_header_packet,uint32_t pack_length) {
     auto message_code = *reinterpret_cast<uint8_t const *>(layer4 + 1);
     current_event.port_s = message_type;
     current_event.port_d = message_code;
-  } else {
-    debug_print(1, "\nOnly Sflow TCP,UDP and CMP  implemented..\n");
+  } else if (layer2_type==0x86dd && layer4_proto == IPPROTO_ICMPV6) {
+    auto message_type = *reinterpret_cast<uint8_t const *>(layer4);
+    auto message_code = *reinterpret_cast<uint8_t const *>(layer4 + 1);
+    current_event.port_s = message_type;
+    current_event.port_d = message_code;
+  } else if (layer4_proto == IPPROTO_DCCP) {
+    auto orig_p = __bswap_16(*reinterpret_cast<uint16_t const *>(layer4));
+    auto resp_p = __bswap_16(*reinterpret_cast<uint16_t const *>(layer4 + 2));
+    current_event.port_s = orig_p;
+    current_event.port_d = resp_p;
+    debug_print(1, "--DCCP_Type:%02x--",(*reinterpret_cast<uint8_t const *>(layer4+8)&0b00011110)>>1);
+  }else if (layer4_proto == IPPROTO_SCTP) {
+    auto orig_p = __bswap_16(*reinterpret_cast<uint16_t const *>(layer4));
+    auto resp_p = __bswap_16(*reinterpret_cast<uint16_t const *>(layer4 + 2));
+    current_event.port_s = orig_p;
+    current_event.port_d = resp_p;
+    debug_print(1, "--SCTP_Type:%02x--",*reinterpret_cast<uint8_t const *>(layer4+12));
+  }
+
+  else {
+    debug_print(1, "\nType:%02x Only Sflow TCP,UDP and CMP  implemented..\n",layer4_proto);
     return -11;
   }
 
@@ -381,8 +400,8 @@ void hexDump(const char *desc, const void *addr, int len) {
 
 int main(int argc, char *argv[]) {
 
-
-  if (argc != 2) {
+argv[1]="/home/nobodylinux/Desktop/_Programming/PcapSample/samples/sctp.cap";
+  if (argc < 2) {
     printf("File input expected%d", argc);
     exit(1);
   }
@@ -420,8 +439,8 @@ int main(int argc, char *argv[]) {
 
     auto sFlowDatagramP = packet + 42;
     try {
-      read_sflow_datagram(sFlowDatagramP);
-      events.push_back(current_event);
+      //read_sflow_datagram(sFlowDatagramP);
+      read_header(sFlowDatagramP-42,header->len);
     }
     catch (uint8_t *) {
       std::cout << "Error in " << __FILE__ << " at line " << __LINE__;
